@@ -21,7 +21,6 @@ export function Cards({ searchQuery }) {
         `http://localhost:3000/movies?q=${searchQuery}`
       );
       const responseBody = await response.json();
-      console.log(responseBody);
       if (responseBody?.length) {
         setMovies(responseBody);
       }
@@ -31,9 +30,7 @@ export function Cards({ searchQuery }) {
   };
 
   const handleDeleteClick = async (movieId) => {
-    const shouldDelete = window.confirm(
-      "Are you sure you want to delete this movie?"
-    );
+    const shouldDelete = confirm("Are you sure you want to delete this movie?");
     if (shouldDelete) {
       try {
         await fetch(`http://localhost:3000/movies/${movieId}`, {
