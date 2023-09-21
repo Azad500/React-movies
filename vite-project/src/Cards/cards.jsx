@@ -12,6 +12,7 @@ export function Cards({ searchQuery }) {
   const dialogRef = useRef(null);
 
   useEffect(() => {
+    setCurrentPage(1);
     fetchMovies();
   }, [searchQuery]);
 
