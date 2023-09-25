@@ -2,14 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import styles from "./cards.module.scss";
 
 export function Cards({ searchQuery }) {
-  const [movies, setMovies] = useState([]);
+  const [movies, setMovies] = useState([]); //movies-filmleri ozunde cemlesdirir ve baslangiz deyeri bos []. setMovies ise sonradan deyishiklik etmek ucundur.
   const [editingMovieId, setEditingMovieId] = useState(null);
+  const [deleteMovieId, setDeleteMovieId] = useState(null);
   const [moviesImages, setMoviesImages] = useState("");
   const [moviesName, setMoviesName] = useState("");
   const [isSaveButtonDisabled, setIsSaveButtonDisabled] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [cardsPerPage] = useState(8);
+  const [currentPage, setCurrentPage] = useState(1); //currentPage filmlerin siyahisinin saxlandigi yerdir default olaraq 1-ci sehifede saxlanilir.
+  const [cardsPerPage] = useState(8); //cardsPerPage her sehifede nece eded film olmalidir onu gosterir(8).
   const dialogRef = useRef(null);
+  const deleteRef = useRef(null);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -30,20 +32,26 @@ export function Cards({ searchQuery }) {
     }
   };
 
-  const handleDeleteClick = async (movieId) => {
-    const shouldDelete = confirm("Are you sure you want to delete this movie?");
-    if (shouldDelete) {
-      try {
-        await fetch(`http://localhost:3000/movies/${movieId}`, {
-          method: "DELETE",
-        });
-        setMovies((prevMovies) =>
-          prevMovies.filter((movie) => movie.id !== movieId)
-        );
-      } catch (error) {
-        console.error("Error deleting movie:", error);
-      }
+  const handleDeleteClick = async () => {
+    try {
+      const movieId = deleteMovieId;
+      await fetch(`http://localhost:3000/movies/${movieId}`, {
+        method: "DELETE",
+      });
+      setMovies((prevMovies) =>
+        prevMovies.filter((movie) => movie.id !== movieId)
+      );
+      deleteRef.current.style.display = "none";
+    } catch (error) {
+      console.error("Error deleting movie:", error);
     }
+  };
+
+  const handleDeletedClick = (deleteId, title, Image) => {
+    setDeleteMovieId(deleteId);
+    setMoviesImages(Image);
+    setMoviesName(title);
+    deleteRef.current.style.display = "flex";
   };
 
   const handleEditClick = async (movieId, title, Image) => {
@@ -78,13 +86,13 @@ export function Cards({ searchQuery }) {
   };
 
   // Pagination
-  const indexOfLastCard = currentPage * cardsPerPage;
-  const indexOfFirstCard = indexOfLastCard - cardsPerPage;
-  const currentCards = movies.slice(indexOfFirstCard, indexOfLastCard);
+  const indexOfLastCard = currentPage * cardsPerPage; //indexOfLastCard cari səhifədə göstəriləcək son film kartının indeksini hesablayır. Bunu cari səhifəni cardsPerPage-ə vurmaqla edir. Bu, cari səhifədə hansı filmlərin göstəriləcəyini müəyyən etməyə kömək edir.
+  const indexOfFirstCard = indexOfLastCard - cardsPerPage; //cari səhifədə göstəriləcək ilk film kartının indeksini hesablayır. Bunu indexOfLastCard-dan cardsPerPage çıxarmaqla edir. Bu, cari səhifədə göstəriləcək filmləri çıxarmaq üçün filmlər massivini dilimləmək üçün istifadə olunur.
+  const currentCards = movies.slice(indexOfFirstCard, indexOfLastCard); //cari səhifədə nümayiş etdiriləcək filmləri ehtiva edən yeni massiv yaratmaq üçün dilim metodundan istifadə edir. Hansı filmlərin daxil ediləcəyini müəyyən etmək üçün indexOfFirstCard və indexOfLastCard istifadə edir.
 
   // Change the page
   const paginate = (pageNumber) => {
-    setCurrentPage(pageNumber);
+    setCurrentPage(pageNumber); //filmlərin səhifəsini dəyişmək üçün istifadə olunur
   };
 
   return (
@@ -149,18 +157,49 @@ export function Cards({ searchQuery }) {
                   </div>
                 </form>
               </div>
+              {/* ------------------delete---------- */}
               <button
                 className={styles.deleteButton}
-                onClick={() => handleDeleteClick(movie.id)}
+                onClick={() =>
+                  handleDeletedClick(movie.id, movie.title, movie.Image)
+                }
               >
                 Delete
               </button>
+              <div
+                ref={deleteRef}
+                id={styles.deleteDialogContainer}
+                className={styles.hiddenBar}
+              >
+                <form id={styles.deleteDialogContent}>
+                  <h1>DELETE MOVIES</h1>
+                  <h2>Are you sure you want to delete this movie?</h2>
+                  <div className={styles.buttonsContainers}>
+                    <button
+                      className={styles.cancelButtonD}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        deleteRef.current.style.display = "none";
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className={styles.deleteButtonD}
+                      onClick={() => handleDeleteClick(movie.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         </div>
       ))}
       {/* Pagination buttons */}
       <div className={styles.pagination}>
+        {/* fimlerin uzunlugunu kartlarin sayina bolub yuvarlaqlasdirib mueyyen edirik ve map funksiyasi vasitesile render edirik */}
         {Array.from({ length: Math.ceil(movies.length / cardsPerPage) }).map(
           (_, index) => (
             <button
