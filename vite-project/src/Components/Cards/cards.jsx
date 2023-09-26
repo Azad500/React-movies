@@ -59,7 +59,7 @@ export function Cards({ searchQuery }) {
     setEditingMovieId(movieId);
     setMoviesImages(Image);
     setMoviesName(title);
-    setIsSaveButtonDisabled(true);
+    setIsSaveButtonDisabled(false); // Enable the Save button
     dialogRef.current.style.display = "flex";
   };
 
